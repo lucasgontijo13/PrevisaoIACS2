@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS2 AI Analytics | Painel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* Paleta de Cores Premium (Zinc Dark Theme) */
+        :root { 
+            --bg-dark: #09090b; 
+            --surface: #18181b; 
+            --surface-hover: #27272a;
+            --border: #27272a; 
+            --border-light: #3f3f46;
+            --text-main: #f4f4f5; 
+            --text-muted: #a1a1aa; 
+            --accent: #3b82f6; 
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --win: #10b981; 
+            --lose: #ef4444;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: var(--font-main); 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- SIDEBAR (MENU LATERAL) --- */
+        .sidebar { width: 280px; background-color: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; }
+        .brand { padding: 30px; font-size: 24px; font-weight: 900; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+        .brand i { color: var(--accent); font-size: 32px; }
+        .nav-menu { display: flex; flex-direction: column; padding: 20px 15px; gap: 8px; flex-grow: 1; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 20px; color: var(--text-muted); text-decoration: none; font-weight: 600; font-size: 15px; border-radius: 10px; transition: all 0.2s ease; }
+        .nav-item i { font-size: 22px; }
+        .nav-item:hover { background-color: var(--surface-hover); color: var(--text-main); }
+        .nav-item.active { background-color: var(--accent-glow); color: var(--accent); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .sidebar-footer { padding: 20px; font-size: 12px; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border); }
+
+        /* --- MAIN CONTENT --- */
+        .main-content { margin-left: 280px; flex-grow: 1; padding: 40px 60px; max-width: 1400px; }
+        .page-header { margin-bottom: 40px; }
+        .page-header h1 { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+        .page-header p { color: var(--text-muted); font-size: 16px; }
+
+        /* --- METRICS WIDGETS --- */
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .metric-card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent); }
+        .metric-value { font-size: 32px; font-weight: 900; color: var(--text-main); }
+        .metric-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+
+        /* --- FILTERS --- */
+        .filters-bar { display: flex; gap: 20px; margin-bottom: 30px; background: var(--surface); padding: 15px 24px; border-radius: 12px; border: 1px solid var(--border); align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 12px; }
+        .filter-group i { color: var(--text-muted); font-size: 20px; }
+        .filter-select { background-color: var(--bg-dark); color: var(--text-main); border: 1px solid var(--border-light); padding: 10px 16px; border-radius: 8px; font-family: var(--font-main); font-size: 14px; font-weight: 500; cursor: pointer; outline: none; transition: border 0.2s; }
+        .filter-select:focus { border-color: var(--accent); }
+
+        /* --- CARDS GRID --- */
+        .match-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 24px; }
+        .card { background-color: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; display: flex; flex-direction: column; animation: fadeIn 0.4s ease-out; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-color: var(--border-light); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .tags { display: flex; gap: 8px; align-items: center; }
+        .tier-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; }
+        .tier-s { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .tier-a { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .tier-b { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .tier-c { background: linear-gradient(135deg, #10b981, #047857); }
+        .tier-d { background: linear-gradient(135deg, #64748b, #334155); }
+        .tier-unranked { background-color: var(--border-light); }
+        .tournament-name { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+        .match-date { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-weight: 500;}
+
+        /* --- VS SECTION --- */
+        .matchup { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 10px; }
+        .team { display: flex; flex-direction: column; align-items: center; width: 40%; gap: 12px; }
+        .team-logo { width: 64px; height: 64px; object-fit: contain; drop-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+        .team-name { font-size: 20px; font-weight: 800; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;}
+        .vs-center { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%; }
+        .vs-text { font-size: 14px; font-weight: 800; color: var(--border-light); }
+        
+        .live-score-container { display: flex; flex-direction: column; align-items: center; }
+        .live-score-box { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 10px; padding: 8px 16px; display: flex; align-items: center; gap: 12px; }
+        .live-divider { color: var(--border-light); font-size: 18px; }
+        .live-label { font-size: 10px; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; margin-top: 8px; text-transform: uppercase; }
+
+        /* --- PROBABILITIES --- */
+        .prob-wrapper { margin-bottom: 20px; }
+        .prob-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 18px; font-weight: 800; }
+        .prob-bar-container { width: 100%; height: 8px; background: var(--bg-dark); border-radius: 10px; display: flex; overflow: hidden; }
+        .prob-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* --- ALERTS & RAIO X --- */
+        .ai-verdict { background: var(--bg-dark); border-radius: 8px; padding: 12px; text-align: center; font-size: 13px; color: var(--text-muted); border: 1px solid var(--border); }
+        .ai-verdict b { color: var(--text-main); }
+        .btn-raiox { width: 100%; background: transparent; border: 1px dashed var(--border-light); color: var(--text-muted); padding: 12px; border-radius: 8px; margin-top: 16px; font-family: var(--font-main); font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-raiox:hover { background: var(--bg-dark); color: var(--text-main); border-color: var(--accent); }
+        .raiox-panel { background: var(--bg-dark); border-radius: 12px; padding: 20px; margin-top: 12px; border: 1px solid var(--border); }
+        .raiox-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: center;}
+        .raiox-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .rx-label { font-size: 12px; color: var(--text-muted); font-weight: 600; width: 40%; text-align: center; text-transform: uppercase;}
+        .rx-val { font-size: 16px; font-weight: 700; color: var(--text-muted); width: 30%; text-align: center; font-variant-numeric: tabular-nums; }
+        .rx-win { color: var(--win); text-shadow: 0 0 10px rgba(16, 185, 129, 0.2); font-size: 18px; font-weight: 900;}
+
+        /* --- STATUS BADGES --- */
+        .status-badge { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 700; padding: 14px; border-radius: 10px; margin-top: 16px; }
+        .status-success { background: rgba(16, 185, 129, 0.1); color: var(--win); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-error { background: rgba(239, 68, 68, 0.1); color: var(--lose); border: 1px solid rgba(239, 68, 68, 0.2); }
+        
+        .live-indicator { background-color: var(--lose); color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; animation: pulse 2s infinite; letter-spacing: 0.5px; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- RESPONSIVIDADE --- */
+        @media (max-width: 1024px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--border); border-right: none;}
+            .brand { border-bottom: none; padding: 20px 0; }
+            .nav-menu { flex-direction: row; padding: 0; gap: 10px; }
+            .nav-item { padding: 10px 16px; }
+            .nav-item span { display: none; }
+            .sidebar-footer { display: none; }
+            .main-content { margin-left: 0; padding: 20px; }
+            .match-grid { grid-template-columns: 1fr; }
+        }
+        .no-matches { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted); background: var(--surface); border: 1px dashed var(--border-light); border-radius: 16px; font-size: 16px;}
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand">
+            <i class="ph-fill ph-crosshair"></i>
+            <div>CS2 <span style="color: var(--accent);">Analytics</span></div>
+        </div>
+        <nav class="nav-menu">
+            <a href="/" class="nav-item {% if page == 'futuro' %}active{% endif %}">
+                <i class="ph ph-calendar-blank"></i>
+                <span>Próximas Partidas</span>
+            </a>
+            <a href="/aovivo" class="nav-item {% if page == 'aovivo' %}active{% endif %}">
+                <i class="ph ph-broadcast"></i>
+                <span>Monitorização ao Vivo</span>
+            </a>
+            <a href="/resultados" class="nav-item {% if page == 'resultados' %}active{% endif %}">
+                <i class="ph ph-chart-line-up"></i>
+                <span>Backtesting (Histórico)</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <p>TCC Ciência da Computação<br>IFMG - Campus Formiga</p>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        
+        <header class="page-header">
+            {% if page == 'futuro' %}
+                <h1>Radar de Previsões</h1>
+                <p>Modelo de Inteligência Artificial processando próximos eventos.</p>
+            {% elif page == 'aovivo' %}
+                <h1>Transmissões em Andamento</h1>
+                <p>Acompanhamento de placares cruzados com previsões estáticas.</p>
+            {% else %}
+                <h1>Validação do Modelo</h1>
+                <p>Auditoria de resultados passados e taxa de acerto real.</p>
+            {% endif %}
+        </header>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <span class="metric-label">Acurácia do Comitê</span>
+                <span class="metric-value" style="color: var(--accent);">{{ acuracia }}%</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Volume de Treinamento</span>
+                <span class="metric-value">{{ total }} <span style="font-size: 14px; color: var(--text-muted);">partidas</span></span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">Motor de Decisão</span>
+                <span class="metric-value">200 <span style="font-size: 14px; color: var(--text-muted);">árvores</span></span>
+            </div>
+        </div>
+
+        {% if page == 'futuro' or page == 'resultados' %}
+        <div class="filters-bar">
+            <div class="filter-group">
+                <i class="ph ph-calendar"></i>
+                <select id="dateFilter" class="filter-select" onchange="filtrarJogos()">
+                    <option value="todos">Todas as Datas</option>
+                    {% for d in datas %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <i class="ph ph-trophy"></i>
+                <select id="tierFilter" class="filter-select" onchange="filtrarJogos()">
+                    <option value="todos">Todos os Tiers</option>
+                    <option value="s">Tier S</option><option value="a">Tier A</option>
+                    <option value="b">Tier B</option><option value="c">Tier C</option>
+                    <option value="d">Tier D</option><option value="unranked">Unranked</option>
+                </select>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="match-grid" id="matchList">
+            
+            {% if matches|length == 0 %}
+                <div class="no-matches">
+                    <i class="ph ph-ghost" style="font-size: 48px; margin-bottom: 16px; color: var(--border-light);"></i><br>
+                    Não há partidas a apresentar nesta categoria no momento.
+                </div>
+            {% endif %}
+
+            {% for m in matches %}
+            <div class="card" data-date="{{ m.data_apenas }}" data-tier="{{ m.tier }}">
+                
+                <div class="card-header">
+                    <div class="tags">
+                        <span class="tier-badge tier-{{ m.tier }}">
+                            {% if m.tier == 'unranked' %}UNRANKED{% else %}TIER {{ m.tier|upper }}{% endif %}
+                        </span>
+                        <span class="tournament-name">{{ m.campeonato }}</span>
+                    </div>
+                    {% if page == 'aovivo' %}
+                        <div class="live-indicator"><i class="ph-fill ph-record"></i> AO VIVO</div>
+                    {% elif page == 'resultados' %}
+                        <div class="match-date"><i class="ph ph-check-circle"></i> {{ m.data_formatada }}</div>
+                    {% else %}
+                        <div class="match-date"><i class="ph ph-clock"></i> {{ m.data_formatada }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="matchup">
+                    <div class="team">
+                        <img src="{{ m.logo1 }}" class="team-logo">
+                        <span class="team-name" style="color: {{ m.cor_t1 }};">{{ m.time1 }}</span>
+                    </div>
+                    
+                    {% if page == 'aovivo' %}
+                    <div class="live-score-container">
+                        <div class="live-score-box">
+                            <div style="display: flex; align-items: baseline; gap: 6px;">
+                                <span style="font-size: 28px; font-weight: 900;">{{ m.round_score1 }}</span>
+                                <span style="font-size: 16px; color: var(--text-muted); font-weight: 500;">({{ m.map_score1 }})</span>
+                            </div>
+                            <span class="live-divider">x</span> 
+                            <div style="display: flex; align-items: baseline; gap: 6px;">
+                                <span style="font-size: 16px; color: var(--text-muted); font-weight: 500;">({{ m.map_score2 }})</span>
+                                <span style="font-size: 28px; font-weight: 900;">{{ m.round_score2 }}</span>
+                            </div>
+                        </div>
+                        <span class="live-label">Rounds (Mapas)</span>
+                    </div>
+                    {% elif page == 'resultados' %}
+                    <div class="vs-center">
+                        <span style="font-size: 24px; font-weight: 900; color: var(--text-main); background: var(--bg-dark); padding: 5px 15px; border-radius: 8px; border: 1px solid var(--border);">{{ m.placar_t1 }} - {{ m.placar_t2 }}</span>
+                        <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; margin-top: 5px; text-transform: uppercase;">Placar da Série</span>
+                    </div>
+                    {% else %}
+                    <div class="vs-center">
+                        <span class="vs-text">VS</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="team">
+                        <img src="{{ m.logo2 }}" class="team-logo">
+                        <span class="team-name" style="color: {{ m.cor_t2 }};">{{ m.time2 }}</span>
+                    </div>
+                </div>
+
+                {% if page != 'resultados' %}
+                    {% if m.tem_dados %}
+                    <div class="prob-wrapper">
+                        <div class="prob-header">
+                            <span style="color: {{ m.cor_t1 }};">{{ m.prob_t1 }}%</span>
+                            <span style="color: {{ m.cor_t2 }};">{{ m.prob_t2 }}%</span>
+                        </div>
+                        <div class="prob-bar-container">
+                            <div class="prob-fill" style="width: {{ m.prob_t1 }}%; background-color: {{ m.cor_t1 }};"></div>
+                            <div class="prob-fill" style="width: {{ m.prob_t2 }}%; background-color: {{ m.cor_t2 }};"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="ai-verdict">
+                        <i class="ph-fill ph-robot"></i> Inteligência aponta favoritismo de <b>{{ m.favorito }}</b>.
+                    </div>
+                    
+                    <button class="btn-raiox" onclick="toggleRaioX(this)">
+                        <i class="ph ph-chart-polar"></i> Expandir Raio-X Analítico
+                    </button>
+                    
+                    <div class="raiox-panel" style="display: none;">
+                        <div class="raiox-row">
+                            <span class="rx-val {% if m.hw_rat == 1 %}rx-win{% endif %}">{{ m.rx_rat1 }}</span>
+                            <span class="rx-label">Poder de Fogo (Rating)</span>
+                            <span class="rx-val {% if m.hw_rat == 2 %}rx-win{% endif %}">{{ m.rx_rat2 }}</span>
+                        </div>
+                        <div class="raiox-row">
+                            <span class="rx-val {% if m.hw_win == 1 %}rx-win{% endif %}">{{ m.rx_win1 }}</span>
+                            <span class="rx-label">Consistência Geral</span>
+                            <span class="rx-val {% if m.hw_win == 2 %}rx-win{% endif %}">{{ m.rx_win2 }}</span>
+                        </div>
+                        <div class="raiox-row">
+                            <span class="rx-val {% if m.hw_lan == 1 %}rx-win{% endif %}">{{ m.rx_lan1 }}</span>
+                            <span class="rx-label">Força em LAN</span>
+                            <span class="rx-val {% if m.hw_lan == 2 %}rx-win{% endif %}">{{ m.rx_lan2 }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="ai-verdict">
+                        <i class="ph ph-warning-circle"></i> Base de dados insuficiente para inferência estatística segura.
+                    </div>
+                    {% endif %}
+                
+                {% else %}
+                    <div class="ai-verdict">
+                        Previsto: <b>{{ m.favorito }}</b> &nbsp;|&nbsp; Resultado Oficial: <b style="color: white;">{{ m.vencedor_real }}</b>
+                    </div>
+                    
+                    {% if m.acertou %}
+                    <div class="status-badge status-success"><i class="ph-fill ph-check-circle" style="font-size: 20px;"></i> MODELO ACERTOU</div>
+                    {% else %}
+                    <div class="status-badge status-error"><i class="ph-fill ph-x-circle" style="font-size: 20px;"></i> MODELO ERROU</div>
+                    {% endif %}
+
+                    <button class="btn-raiox" onclick="toggleRaioX(this)" style="margin-top: 10px;">
+                        <i class="ph ph-magnifying-glass-plus"></i> Ver Detalhes dos Mapas
+                    </button>
+                    
+                    <div class="raiox-panel" style="display: none;">
+                        {% if m.mapas|length > 0 %}
+                            {% for mapa in m.mapas %}
+                            <div class="raiox-row">
+                                <span class="rx-val {% if mapa.w1 %}rx-win{% endif %}" style="font-size: 15px;">{{ mapa.r1 }}</span>
+                                <span class="rx-label" style="color: var(--text-main);">{{ mapa.mapa|upper }}</span>
+                                <span class="rx-val {% if mapa.w2 %}rx-win{% endif %}" style="font-size: 15px;">{{ mapa.r2 }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="raiox-row" style="justify-content: center; color: var(--text-muted); border: none;">
+                                Detalhes de mapas não disponíveis para esta partida.
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+            
+            {% if page == 'futuro' or page == 'resultados' %}
+            <div class="no-matches" id="noMatchesMsg" style="display: none;">
+                <i class="ph ph-funnel-x" style="font-size: 48px; margin-bottom: 16px; color: var(--border-light);"></i><br>
+                Nenhuma partida atende aos filtros selecionados.
+            </div>
+            {% endif %}
+
+        </div>
+    </main>
+
+    <script>
+        function filtrarJogos() {
+            const dataFilter = document.getElementById('dateFilter');
+            const tierFilter = document.getElementById('tierFilter');
+            
+            const d = dataFilter ? dataFilter.value : 'todos';
+            const t = tierFilter ? tierFilter.value : 'todos';
+            
+            const cards = document.querySelectorAll('.card');
+            let visiveis = 0;
+            
+            cards.forEach(c => {
+                const dataCard = c.getAttribute('data-date');
+                const tierCard = c.getAttribute('data-tier');
+                
+                const matchData = (d === 'todos' || dataCard === d);
+                const matchTier = (t === 'todos' || tierCard === t);
+                
+                if (matchData && matchTier) {
+                    c.style.display = 'flex';
+                    visiveis++;
+                } else {
+                    c.style.display = 'none';
+                }
+            });
+            
+            const msg = document.getElementById('noMatchesMsg');
+            if(msg) msg.style.display = (visiveis === 0) ? 'block' : 'none';
+        }
+        
+        function toggleRaioX(btn) { 
+            const p = btn.nextElementSibling; 
+            if (p.style.display === "none") { 
+                p.style.display = "block"; 
+                btn.innerHTML = "<i class='ph ph-caret-up'></i> Ocultar Detalhes"; 
+                btn.style.borderColor = "var(--accent)";
+                btn.style.color = "var(--text-main)";
+            } else { 
+                p.style.display = "none"; 
+                // Volta ao texto original de acordo com a aba
+                btn.innerHTML = btn.innerText.includes("Mapas") ? "<i class='ph ph-magnifying-glass-plus'></i> Ver Detalhes dos Mapas" : "<i class='ph ph-chart-polar'></i> Expandir Raio-X Analítico"; 
+                btn.style.borderColor = "var(--border-light)";
+                btn.style.color = "var(--text-muted)";
+            } 
+        }
+
+        {% if page == 'aovivo' %}
+            setInterval(function() { window.location.reload(); }, 60000);
+        {% endif %}
+    </script>
+</body>
+</html>
